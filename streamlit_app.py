@@ -1,36 +1,17 @@
 import streamlit as st
 from openai import OpenAI
 
-# 예시 장소 데이터
-places = {
-    "서울": [
-        "서울숲 - 자연 속 산책과 놀이터",
-        "키즈플라넷 삼성점 - 실내 놀이 공간",
-        "국립과천과학관 - 어린이 체험전시"
-    ],
-    "부산": [
-        "부산 어린이대공원 - 놀이기구와 동물원",
-        "부산국립과학관 - 다양한 가족 체험",
-        "해운대 키즈카페 리틀빅플레이"
-    ],
-    "대구": [
-        "이월드 - 테마파크와 놀이기구",
-        "대구수목원 - 자연 체험",
-        "국립대구과학관 - 어린이 체험전시"
-    ]
-}
+# 지역명 리스트 (필요시 추가 가능)
+known_regions = ["서울", "부산", "대구", "대전", "광주", "인천", "제주", "수원", "울산", "춘천"]
 
-# 함수: 지역명 포함 여부 판단 & 추천
-def check_for_region_and_reply(prompt):
-    for region in places:
+def extract_region(prompt):
+    for region in known_regions:
         if region in prompt:
-            recs = places[region]
-            return f"🔍 '{region}' 지역의 추천 장소입니다:\n" + "\n".join(f"- {r}" for r in recs)
-    return None  # 지역명 없으면 None 반환
+            return region
+    return None
 
-# Streamlit UI
 st.title("👨‍👩‍👧 가족 나들이 장소 추천 챗봇")
-st.write("지역명을 입력하면 가족이 놀기 좋은 장소를 추천해드려요!")
+st.write("지역명을 입력하면, GPT가 그 지역에서 가족이 놀기 좋은 장소를 실시간으로 추천해줘요!")
 
 openai_api_key = st.text_input("OpenAI API Key", type="password")
 if not openai_api_key:
@@ -51,23 +32,20 @@ else:
         with st.chat_message("user"):
             st.markdown(prompt)
 
-        # 지역명 판단 먼저 시도
-        region_reply = check_for_region_and_reply(prompt)
-
-        if region_reply:
-            with st.chat_message("assistant"):
-                st.markdown(region_reply)
-            st.session_state.messages.append({"role": "assistant", "content": region_reply})
+        region = extract_region(prompt)
+        if region:
+            auto_prompt = f"{region}에서 가족이 함께 놀기 좋은 장소 3곳을 추천해줘. 장소 이름과 간단한 설명도 포함해줘."
+            full_messages = [{"role": "system", "content": "너는 여행지 추천 전문가야. 장소 추천만 간단하고 명확하게 해줘."}]
+            full_messages += [{"role": "user", "content": auto_prompt}]
         else:
-            # OpenAI에게 전달
-            stream = client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[
-                    {"role": m["role"], "content": m["content"]}
-                    for m in st.session_state.messages
-                ],
-                stream=True,
-            )
-            with st.chat_message("assistant"):
-                response = st.write_stream(stream)
-            st.session_state.messages.append({"role": "assistant", "content": response})
+            full_messages = [{"role": m["role"], "content": m["content"]} for m in st.session_state.messages]
+
+        stream = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=full_messages,
+            stream=True,
+        )
+
+        with st.chat_message("assistant"):
+            response = st.write_stream(stream)
+        st.session_state.messages.append({"role": "assistant", "content": response})
