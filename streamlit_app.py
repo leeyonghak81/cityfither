@@ -10,9 +10,6 @@ def extract_region(prompt):
             return region
     return None
 
-# 이미지 표시
-st.image("images/family.jpg", caption="가족과 함께하는 즐거운 나들이!", use_column_width=True)
-
 st.title("👨‍👩‍👧 가족 나들이 장소 추천 챗봇")
 st.write("지역명을 입력하면, GPT가 그 지역에서 가족이 놀기 좋은 장소를 실시간으로 추천해줘요!")
 
