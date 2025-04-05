@@ -34,14 +34,14 @@ else:
     # automatically at the bottom of the page.
     if prompt := st.chat_input("What is up?"):
 
-        # Store and display the current prompt.
+        # Store and display the current prompt. 
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
 
         # Generate a response using the OpenAI API.
         stream = client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="gpt-4o-mini",
             messages=[
                 {"role": m["role"], "content": m["content"]}
                 for m in st.session_state.messages
